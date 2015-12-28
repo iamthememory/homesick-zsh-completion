@@ -1,0 +1,141 @@
+#compdef homesick
+#
+# Copyright (c) 2015 Alex Corkwell (iamthememory)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#   1. Redistributions of source code must retain the above copyright notice,
+#      this list of conditions, and the following disclaimer.
+#
+#   2. Redistributions in binary form must reproduce the above copyright notice,
+#      this list of conditions, and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#
+#   3. Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from this
+#      software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+_homesick() {
+  # Create local variables / associative arrays.
+  typeset -A opt_args
+  local context state line curcontext="$curcontext"
+
+  # The general flags accepted by all commands (according to
+  # `homesick help SUBCOMMAND`, though not all make sense for the context).
+  local __homesick_genericargs=(
+    {-f,--force}'[Overwrite files that already exist]' \
+    {-p,--pretend,--no-pretend}'[Run but do not make any changes]' \
+    {-q,--quiet,--no-quiet}'[Suppress status output]' \
+    {-s,--skip,--no-skip}'[Skip files that already exist]'
+  )
+
+  _arguments -C \
+    ':command:->command' \
+    '*::options:->options'
+
+  case "$state" in
+    (command)
+      local -a subcommands
+      subcommands=(
+        'cd:Open a new shell in the root of the given castle'
+        'clone:Clone +uri+ as a castle with name CASTLE_NAME for homesick'
+        "commit:Commit the specified castle's changes"
+        'destroy:Delete all symlinks and remove the cloned repository'
+        'diff:Shows the git diff of uncommitted changes in a castle'
+        'exec:Execute a single shell command inside the root of a castle'
+        'exec_all:Execute a single shell command inside the root of every cloned castle'
+        'generate:Generate a homesick-ready git repo at PATH'
+        'help:Describe available commands or one specific command'
+        'link:Symlinks all dotfiles from the specified castle'
+        'list:List cloned castles'
+        'open:Open your default editor in the root of the given castle'
+        'pull:Update the specified castle'
+        'push:Push the specified castle'
+        'rc:Run the .homesickrc for the specified castle'
+        'show_path:Prints the path of a castle'
+        'status:Shows the git status of a castle'
+        'track:Add a file to a castle'
+        'unlink:Unsymlinks all dotfiles from the specified castle'
+        'version:Display the current version of homesick'
+      )
+      _describe -t commands 'homesick' subcommands
+    ;;
+
+    (options)
+      case $line[1] in
+        (cd|commit|destroy|diff|exec|link|open|push|rc|show_path|status|unlink)
+          _arguments \
+            ${__homesick_genericargs} \
+            ':castle:__homesick_list_castles'
+        ;;
+
+        (clone|exec_all|list)
+          _arguments \
+            ${__homesick_genericargs}
+        ;;
+
+        (generate)
+          _arguments \
+            ${__homesick_genericargs} \
+            ':repopath:_path_files -/'
+        ;;
+
+        (help)
+          _arguments \
+            ${__homesick_genericargs} \
+            ':command:(cd clone commit destroy diff exec exec_all generate help link list open pull push rc show_path status track unlink version)'
+        ;;
+
+        (pull)
+          _arguments \
+            ${__homesick_genericargs} \
+            {--all,--no-all}'[Update all cloned castles]' \
+            ':castle:__homesick_list_castles'
+        ;;
+
+        (track)
+          _arguments \
+            ${__homesick_genericargs} \
+            ":dotfile:_path_files -W \"${HOME}\" -g '.*'" \
+            ':castle:__homesick_list_castles'
+        ;;
+
+        (version)
+          __homesick_version
+        ;;
+      esac
+    ;;
+  esac
+}
+
+
+# Add the castles to the current completion.
+__homesick_list_castles() {
+  local castle castles expl
+
+  castles=()
+
+  homesick list \
+  | sed 's/^[[:space:]]*\([^[:space:]]\+\)[[:space:]].*$/\1/' \
+  | while read castle
+    do
+      castles+="$castle"
+    done
+
+  _wanted castles expl 'castle' compadd $castles
+}
