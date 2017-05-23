@@ -37,7 +37,8 @@ _homesick() {
 
   # The general flags accepted by all commands (according to
   # `homesick help SUBCOMMAND`, though not all make sense for the context).
-  local __homesick_genericargs=(
+  local __homesick_genericargs
+  __homesick_genericargs=(
     {-f,--force}'[Overwrite files that already exist]' \
     {-p,--pretend,--no-pretend}'[Run but do not make any changes]' \
     {-q,--quiet,--no-quiet}'[Suppress status output]' \
